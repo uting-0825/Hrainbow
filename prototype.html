@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>给小润的回忆书房</title>
+  <meta name="description" content="一间收藏旅行、游戏、音乐与陪伴的水彩生日书房。">
+  <link rel="stylesheet" href="app/globals.css">
+</head>
+<body>
+  <main class="site-shell">
+    <div class="paper-noise" aria-hidden="true"></div>
+    <header class="intro"><div><p>给小润的生日礼物 · 09 / 05</p><h1>一些被我们好好收藏的日子</h1></div><span>点击房间里的物件，慢慢逛一逛</span></header>
+    <section class="room" aria-label="小润的回忆书房">
+      <div class="wall-shadow"></div>
+      <button class="object map-frame" id="open-map" aria-label="打开旅行地图"><span class="map-paper"><i></i><i></i><i></i><i></i></span><b>旅行地图</b></button>
+      <div class="plant" aria-hidden="true"><i></i><i></i><i></i><span></span></div>
+      <div class="desk" aria-hidden="true"><span class="drawer"></span></div>
+      <button class="object lamp" aria-label="打开台灯"><span class="lamp-glow"></span><span class="shade"></span><span class="stem"></span><span class="base"></span><b>晚安灯</b></button>
+      <button class="object computer" aria-label="打开电脑"><span class="screen"><i>✦</i><em>小润的电脑</em></span><span class="keyboard"></span><b>电脑</b></button>
+      <button class="object record" aria-label="打开唱片机"><span class="lid"></span><span class="player"><i></i><em></em></span><b>唱片机</b></button>
+      <button class="object puzzle" aria-label="打开拼图"><span><i></i><i></i><i></i><i></i><i></i><i></i></span><b>拼图</b></button>
+      <button class="object dog" aria-label="和金毛小狗互动"><span class="dog-body"></span><span class="dog-head"><i class="ear left"></i><i class="ear right"></i><i class="eye left"></i><i class="eye right"></i><i class="nose"></i></span><span class="tail"></span><b>摸摸它</b></button>
+      <div class="rug" aria-hidden="true"></div><p class="room-note">房间里的回忆还在慢慢抵达。</p>
+    </section>
+    <nav class="memory-status" aria-label="回忆收集进度"><span><i class="done"></i>旅行</span><span><i></i>游戏</span><span><i></i>音乐</span><span><i></i>陪伴</span><span><i></i>拼图</span></nav>
+    <div class="modal-backdrop" id="map-modal" hidden>
+      <section class="map-modal" role="dialog" aria-modal="true" aria-label="旅行地图">
+        <button class="close" id="close-map" aria-label="关闭">×</button>
+        <div class="map-copy"><p>我们的旅行标本</p><h2>去过的地方，都在发一点微光</h2><span>选择一个地点，查看暂存的拍立得。之后可以换成你们的真实照片。</span></div>
+        <div class="travel-layout">
+          <div class="china-paper" aria-label="中国地图占位图"><div class="landmass"></div><button class="pin pin-1 active" data-place="江西"><i></i>江西</button><button class="pin pin-2" data-place="福建"><i></i>福建</button><button class="pin pin-3" data-place="贵州"><i></i>贵州</button><button class="pin pin-4" data-place="广东"><i></i>广东</button></div>
+          <article class="polaroid" id="polaroid"><div class="photo-placeholder"><span id="place-name">江西</span><small>旅行照片待放入</small></div><h3 id="place-date">江西 · 某年某月</h3><p id="place-note">照片和故事还在路上，先替它留一块温柔的位置。</p><em>未来：单击照片即可翻面</em></article>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const data={江西:['照片和故事还在路上，先替它留一块温柔的位置。','#78846a'],福建:['海风、旧街和我们没有写完的旅行注脚。','#9c695b'],贵州:['等照片放进来，这里会变成一叠可以翻面的拍立得。','#6d7b63'],广东:['把那一天最好笑的小事，写在照片背面吧。','#a27a61']};
+    const modal=document.querySelector('#map-modal');
+    document.querySelector('#open-map').onclick=()=>{modal.hidden=false};
+    document.querySelector('#close-map').onclick=()=>{modal.hidden=true};
+    modal.onclick=e=>{if(e.target===modal)modal.hidden=true};
+    document.querySelectorAll('.pin').forEach(pin=>pin.onclick=()=>{document.querySelectorAll('.pin').forEach(p=>p.classList.remove('active'));pin.classList.add('active');const place=pin.dataset.place;document.querySelector('#place-name').textContent=place;document.querySelector('#place-date').textContent=place+' · 某年某月';document.querySelector('#place-note').textContent=data[place][0];document.querySelector('#polaroid').style.setProperty('--place-color',data[place][1])});
+  </script>
+</body>
+</html>
