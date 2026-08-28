@@ -5,74 +5,50 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 
 type TravelMapModalProps = { onClose: () => void };
-type CityId = 'dongguan' | 'shantou' | 'chaozhou' | 'zhuhai' | 'hongkong' | 'macau';
+type ProvinceId = 'jiangsu' | 'jiangxi' | 'fujian' | 'guizhou' | 'guangdong';
 type Photo = { src: string; label?: string };
-type City = { id: CityId; name: string; subtitle: string; photos: Photo[] };
+type Place = { id: string; name: string; subtitle: string; photos: Photo[] };
+type Province = { id: ProvinceId; name: string; english: string; map: string; alt: string; places: Place[]; direct?: boolean };
 
 const asset = (path: string) => `/assets/travel/${path}`;
+const numberedPhotos = (folder: string, count: number, labels: Array<string | undefined> = []) =>
+  Array.from({ length: count }, (_, index) => ({
+    src: asset(`${folder}/${String(index + 1).padStart(2, '0')}.webp`),
+    label: labels[index],
+  }));
 
-const cities: City[] = [
+const provinces: Province[] = [
   {
-    id: 'dongguan', name: '东莞', subtitle: '在日常里捡到的可爱瞬间',
-    photos: [
-      { src: asset('guangdong/dongguan/01.webp'), label: 'KTV' },
-      { src: asset('guangdong/dongguan/02.webp'), label: 'yt 的家' },
-      { src: asset('guangdong/dongguan/03.webp'), label: '莞城' },
-      { src: asset('guangdong/dongguan/04.webp'), label: '麦当劳' },
+    id: 'jiangsu', name: '江苏', english: 'JIANGSU', map: 'jiangsu-map.webp', direct: true, alt: '南京手绘城市地图',
+    places: [{ id: 'nanjing', name: '南京', subtitle: '梧桐、博物馆和一起走过的南京', photos: numberedPhotos('jiangsu/nanjing', 6, [undefined, '中山陵', '南京博物馆', '梧桐大道', '玄武门', '红山动物园']) }],
+  },
+  {
+    id: 'jiangxi', name: '江西', english: 'JIANGXI', map: 'jiangxi-map.webp', alt: '江西省地图',
+    places: [
+      { id: 'nanchang', name: '南昌', subtitle: '生活里的小事，也值得好好收藏', photos: numberedPhotos('jiangxi/nanchang', 13, [undefined, undefined, '一个躺', '一起实习', '一起实验课', '一起游泳', '互相鼓励', '博物馆', '吃饭吃饭', '晚安小狗', '江西菜', '过生日', '瑶湖']) },
+      { id: 'jiujiang', name: '九江', subtitle: '山风经过，照片替我们记得', photos: numberedPhotos('jiangxi/jiujiang', 3, [undefined, undefined, '庐山']) },
+      { id: 'jingdezhen', name: '景德镇', subtitle: '瓷器、街巷和一张大头贴', photos: numberedPhotos('jiangxi/jingdezhen', 3, [undefined, undefined, '大头贴']) },
     ],
   },
   {
-    id: 'shantou', name: '汕头', subtitle: '海风、旧街和贴得很近的合照',
-    photos: [
-      { src: asset('guangdong/shantou/01.webp') },
-      { src: asset('guangdong/shantou/02.webp'), label: '汕头小公园' },
-      { src: asset('guangdong/shantou/03.webp'), label: '礐石公园' },
+    id: 'fujian', name: '福建', english: 'FUJIAN', map: 'fujian-map.webp', alt: '福建省地图',
+    places: [{ id: 'footprints', name: '福建足迹', subtitle: '沿着海岸，把几天的光收进口袋', photos: numberedPhotos('fujian/footprints', 5) }],
+  },
+  {
+    id: 'guizhou', name: '贵州', english: 'GUIZHOU', map: 'guizhou-map.webp', alt: '贵州省地图',
+    places: [{ id: 'footprints', name: '贵州足迹', subtitle: '山路、夜色和没有说完的故事', photos: numberedPhotos('guizhou/footprints', 4) }],
+  },
+  {
+    id: 'guangdong', name: '广东', english: 'GUANGDONG', map: 'guangdong-map.webp', alt: '广东省地图',
+    places: [
+      { id: 'dongguan', name: '东莞', subtitle: '在日常里捡到的可爱瞬间', photos: numberedPhotos('guangdong/dongguan', 4, ['KTV', 'yt 的家', '莞城', '麦当劳']) },
+      { id: 'shantou', name: '汕头', subtitle: '海风、旧街和贴得很近的合照', photos: numberedPhotos('guangdong/shantou', 3, [undefined, '汕头小公园', '礐石公园']) },
+      { id: 'chaozhou', name: '潮州', subtitle: '一些认真玩耍，也认真犯傻的晚上', photos: numberedPhotos('guangdong/chaozhou', 3, [undefined, '酒店', '鲁迅公园']) },
+      { id: 'zhuhai', name: '珠海', subtitle: '从一顿饭出发，慢慢逛到很远', photos: numberedPhotos('guangdong/zhuhai', 4, ['何师傅带人', '和小果果', '带 yt 吃萨莉亚', '游乐园']) },
+      { id: 'hongkong', name: '香港', subtitle: '一路吃、一路走，也一路拍下来', photos: numberedPhotos('guangdong/hongkong', 6) },
+      { id: 'macau', name: '澳门', subtitle: '阳光落在城墙边，也落在我们的相册里', photos: numberedPhotos('guangdong/macau', 4) },
     ],
   },
-  {
-    id: 'chaozhou', name: '潮州', subtitle: '一些认真玩耍，也认真犯傻的晚上',
-    photos: [
-      { src: asset('guangdong/chaozhou/01.webp') },
-      { src: asset('guangdong/chaozhou/02.webp'), label: '酒店' },
-      { src: asset('guangdong/chaozhou/03.webp'), label: '鲁迅公园' },
-    ],
-  },
-  {
-    id: 'zhuhai', name: '珠海', subtitle: '从一顿饭出发，慢慢逛到很远',
-    photos: [
-      { src: asset('guangdong/zhuhai/01.webp'), label: '何师傅带人' },
-      { src: asset('guangdong/zhuhai/02.webp'), label: '和小果果' },
-      { src: asset('guangdong/zhuhai/03.webp'), label: '带 yt 吃萨莉亚' },
-      { src: asset('guangdong/zhuhai/04.webp'), label: '游乐园' },
-    ],
-  },
-  {
-    id: 'hongkong', name: '香港', subtitle: '一路吃、一路走，也一路拍下来',
-    photos: Array.from({ length: 6 }, (_, index) => ({
-      src: asset(`guangdong/hongkong/${String(index + 1).padStart(2, '0')}.webp`),
-    })),
-  },
-  {
-    id: 'macau', name: '澳门', subtitle: '阳光落在城墙边，也落在我们的相册里',
-    photos: Array.from({ length: 4 }, (_, index) => ({
-      src: asset(`guangdong/macau/${String(index + 1).padStart(2, '0')}.webp`),
-    })),
-  },
-];
-
-const provincePins = [
-  { id: 'jiangsu', name: '江苏', x: 72.5, y: 41.5, w: 6.5, h: 10 },
-  { id: 'jiangxi', name: '江西', x: 65.5, y: 56.5, w: 7, h: 11 },
-  { id: 'fujian', name: '福建', x: 72.5, y: 59.5, w: 6.5, h: 11 },
-  { id: 'guizhou', name: '贵州', x: 53.5, y: 57, w: 8.5, h: 11 },
-  { id: 'guangdong', name: '广东', x: 62.5, y: 68, w: 10, h: 11 },
-];
-
-const cityPins: Array<{ id: CityId; x: number; y: number; w: number; h: number }> = [
-  { id: 'dongguan', x: 60, y: 49, w: 9, h: 12 },
-  { id: 'zhuhai', x: 56.3, y: 59.5, w: 9, h: 13 },
-  { id: 'shantou', x: 79, y: 39, w: 8, h: 12 },
-  { id: 'chaozhou', x: 82, y: 31, w: 8, h: 12 },
 ];
 
 function playPaperSound() {
@@ -102,96 +78,143 @@ function playPaperSound() {
   source.addEventListener('ended', () => void context.close());
 }
 
-declare global {
-  interface Window { webkitAudioContext?: typeof AudioContext }
+function fanPosition(index: number, count: number) {
+  const mobile = window.innerWidth <= 760;
+  const desktopX = count === 1 ? [0] : count === 2 ? [-92, 92] : count === 3 ? [-150, 0, 150] : [-205, -68, 72, 205];
+  const mobileX = count === 1 ? [0] : count === 2 ? [-48, 48] : count === 3 ? [-72, 0, 72] : [-92, -31, 33, 94];
+  const y = count === 1 ? [0] : count === 2 ? [7, -7] : count === 3 ? [8, -10, 7] : [11, -11, 8, -5];
+  const rotation = count === 1 ? [0] : count === 2 ? [-5, 5] : count === 3 ? [-8, 1, 7] : [-9, -3, 4, 9];
+  return { x: (mobile ? mobileX : desktopX)[index], y: y[index], rotation: rotation[index] };
 }
+
+declare global { interface Window { webkitAudioContext?: typeof AudioContext } }
 
 export default function TravelMapModal({ onClose }: TravelMapModalProps) {
   const rootRef = useRef<HTMLElement>(null);
-  const [view, setView] = useState<'china' | 'guangdong'>('china');
-  const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
-  const [notice, setNotice] = useState('颜色更深的省份，藏着可以打开的旅行页');
-  const [flipped, setFlipped] = useState<Set<string>>(new Set());
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<'china' | ProvinceId>('china');
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [focusedPhoto, setFocusedPhoto] = useState<number | null>(null);
+  const [flippedPhoto, setFlippedPhoto] = useState<number | null>(null);
+  const [previewOrigin, setPreviewOrigin] = useState({ x: 88, y: 88 });
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  const city = useMemo(() => cities.find((item) => item.id === selectedCity) ?? null, [selectedCity]);
+  const province = useMemo(() => provinces.find((item) => item.id === view) ?? null, [view]);
+  const place = useMemo(() => province?.places.find((item) => item.id === selectedPlaceId) ?? null, [province, selectedPlaceId]);
+  const visiblePhotos = useMemo(() => place?.photos.slice(page * 4, page * 4 + 4) ?? [], [place, page]);
+  const pageCount = place ? Math.ceil(place.photos.length / 4) : 0;
 
   useEffect(() => {
-    try {
-      setNotes(JSON.parse(localStorage.getItem('xiaorun-travel-notes') ?? '{}'));
-    } catch { setNotes({}); }
+    try { setNotes(JSON.parse(localStorage.getItem('xiaorun-travel-notes') ?? '{}')); }
+    catch { setNotes({}); }
   }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (selectedCity) setSelectedCity(null);
-      else if (view === 'guangdong') setView('china');
+      if (flippedPhoto !== null) setFlippedPhoto(null);
+      else if (focusedPhoto !== null) setFocusedPhoto(null);
+      else if (selectedPlaceId) setSelectedPlaceId(null);
+      else if (view !== 'china') setView('china');
       else onClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, selectedCity, view]);
+  }, [flippedPhoto, focusedPhoto, onClose, selectedPlaceId, view]);
 
   useGSAP(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const timeline = gsap.timeline({ defaults: { ease: 'power3.out' } });
-    timeline
-      .from('.travel-backdrop', { autoAlpha: 0, duration: reduce ? 0 : 0.35 })
-      .from('.stamp-shell', {
-        autoAlpha: 0,
-        scale: reduce ? 1 : 0.92,
-        clipPath: reduce ? 'inset(0% round 24px)' : 'inset(46% 47% 46% 47% round 24px)',
-        duration: reduce ? 0 : 0.82,
-      }, '<0.04')
-      .from('.travel-toolbar > *', { autoAlpha: 0, y: -8, stagger: 0.06, duration: reduce ? 0 : 0.35 }, '-=0.28');
+    gsap.timeline({ defaults: { ease: 'power3.out' } })
+      .from('.travel-backdrop', { autoAlpha: 0, duration: reduce ? 0 : 0.32 })
+      .from('.stamp-shell', { autoAlpha: 0, scale: reduce ? 1 : 0.94, clipPath: reduce ? 'inset(0% round 24px)' : 'inset(46% 47% 46% 47% round 24px)', duration: reduce ? 0 : 0.78 }, '<0.04')
+      .from('.travel-toolbar > *', { autoAlpha: 0, y: -8, stagger: 0.06, duration: reduce ? 0 : 0.32 }, '-=0.24');
   }, { scope: rootRef });
 
   useGSAP(() => {
+    if (view === 'china') return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (view === 'guangdong' && !selectedCity) {
-      gsap.fromTo('.province-sheet',
-        { autoAlpha: 0, scale: reduce ? 1 : 0.78, clipPath: 'circle(9% at 66% 69%)' },
-        { autoAlpha: 1, scale: 1, clipPath: 'circle(100% at 50% 50%)', duration: reduce ? 0 : 0.82, ease: 'power3.inOut' });
-      gsap.from('.city-pin', { autoAlpha: 0, scale: 0.5, stagger: 0.06, duration: reduce ? 0 : 0.42, ease: 'back.out(1.5)', delay: reduce ? 0 : 0.42 });
-    }
-    if (selectedCity) {
-      gsap.fromTo('.city-gallery',
-        { autoAlpha: 0, clipPath: 'inset(45% 5% 45% 5% round 28px)' },
-        { autoAlpha: 1, clipPath: 'inset(0% 0% 0% 0% round 20px)', duration: reduce ? 0 : 0.58, ease: 'power3.inOut' });
-      gsap.from('.polaroid', { autoAlpha: 0, y: reduce ? 0 : 70, scale: reduce ? 1 : 0.72, stagger: 0.075, duration: reduce ? 0 : 0.58, ease: 'back.out(1.25)', delay: reduce ? 0 : 0.2 });
-    }
-  }, { dependencies: [view, selectedCity], scope: rootRef, revertOnUpdate: true });
+    gsap.fromTo('.province-sheet', { autoAlpha: 0, scale: reduce ? 1 : 0.88, clipPath: 'circle(12% at 18% 18%)' }, { autoAlpha: 1, scale: 1, clipPath: 'circle(100% at 50% 50%)', duration: reduce ? 0 : 0.76, ease: 'power3.inOut' });
+    gsap.from('.map-stamp-button', { autoAlpha: 0, y: reduce ? 0 : -10, stagger: 0.055, duration: reduce ? 0 : 0.42, ease: 'power3.out', delay: reduce ? 0 : 0.28 });
+  }, { dependencies: [view], scope: rootRef, revertOnUpdate: true });
+
+  useGSAP(() => {
+    if (!place) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cards = gsap.utils.toArray<HTMLElement>('.photo-fan .polaroid');
+    gsap.timeline({ defaults: { ease: 'power3.out' } })
+      .fromTo('.location-preview', { autoAlpha: 0, scale: 0.68 }, { autoAlpha: 1, scale: 1, duration: reduce ? 0 : 0.22 })
+      .to('.map-dim', { autoAlpha: 1, duration: reduce ? 0 : 0.34 }, 0.1)
+      .fromTo(cards, { autoAlpha: 0, scale: 0.7, x: 0, y: 0, rotation: 0 }, {
+        autoAlpha: 1, scale: 1,
+        x: (index) => fanPosition(index, cards.length).x,
+        y: (index) => fanPosition(index, cards.length).y,
+        rotation: (index) => fanPosition(index, cards.length).rotation,
+        duration: reduce ? 0 : 0.78, stagger: reduce ? 0 : 0.055,
+      }, 0.2)
+      .to('.location-preview', { autoAlpha: 0, scale: 0.84, duration: reduce ? 0 : 0.2 }, 0.4);
+  }, { dependencies: [selectedPlaceId, page], scope: rootRef, revertOnUpdate: true });
+
+  useGSAP(() => {
+    if (!place) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cards = gsap.utils.toArray<HTMLElement>('.photo-fan .polaroid');
+    cards.forEach((card, index) => {
+      const position = fanPosition(index, cards.length);
+      const focused = focusedPhoto === index;
+      const pushedBack = focusedPhoto !== null && !focused;
+      gsap.to(card, {
+        x: focused ? 0 : position.x, y: focused ? 0 : position.y, rotation: focused ? 0 : position.rotation,
+        scale: focused ? (window.innerWidth <= 760 ? 1.08 : 1.18) : pushedBack ? 0.86 : 1,
+        autoAlpha: pushedBack ? 0.24 : 1, zIndex: focused ? 30 : index + 8,
+        duration: reduce ? 0 : 0.66, ease: 'power3.out',
+      });
+    });
+  }, { dependencies: [focusedPhoto], scope: rootRef, revertOnUpdate: true });
 
   const { contextSafe } = useGSAP({ scope: rootRef });
-
   const closeAnimated = contextSafe(() => {
-    gsap.to('.stamp-shell', { autoAlpha: 0, scale: 0.96, duration: 0.3, ease: 'power2.in' });
-    gsap.to('.travel-backdrop', { autoAlpha: 0, duration: 0.32, delay: 0.08, onComplete: onClose });
+    gsap.to('.stamp-shell', { autoAlpha: 0, scale: 0.96, duration: 0.28, ease: 'power2.in' });
+    gsap.to('.travel-backdrop', { autoAlpha: 0, duration: 0.3, delay: 0.06, onComplete: onClose });
   });
 
-  const chooseProvince = (id: string, name: string) => {
-    if (id === 'guangdong') {
-      setView('guangdong');
-      setNotice('点击深色城市，拆开一叠属于这里的拍立得');
-      return;
+  const rememberOrigin = (button: HTMLButtonElement) => {
+    const canvas = canvasRef.current?.getBoundingClientRect();
+    const rect = button.getBoundingClientRect();
+    if (canvas) setPreviewOrigin({ x: rect.left - canvas.left + rect.width / 2, y: rect.top - canvas.top + rect.height + 12 });
+  };
+
+  const openPlace = (event: React.MouseEvent<HTMLButtonElement>, id: string) => {
+    rememberOrigin(event.currentTarget);
+    playPaperSound();
+    setPage(0); setFocusedPhoto(null); setFlippedPhoto(null); setSelectedPlaceId(id);
+  };
+
+  const chooseProvince = (event: React.MouseEvent<HTMLButtonElement>, item: Province) => {
+    setView(item.id); setSelectedPlaceId(null); setFocusedPhoto(null); setFlippedPhoto(null);
+    if (item.direct) {
+      rememberOrigin(event.currentTarget);
+      playPaperSound();
+      window.setTimeout(() => setSelectedPlaceId(item.places[0].id), 80);
     }
-    setNotice(`${name}的旅行页正在整理中，广东支线已经可以先逛啦`);
   };
 
-  const openCity = (id: CityId) => {
-    playPaperSound();
-    setFlipped(new Set());
-    setSelectedCity(id);
+  const closeGallery = () => {
+    setSelectedPlaceId(null); setFocusedPhoto(null); setFlippedPhoto(null); setPage(0);
   };
 
-  const togglePhoto = (key: string) => {
+  const goBack = () => {
+    if (selectedPlaceId && province?.direct) {
+      closeGallery();
+      setView('china');
+    } else if (selectedPlaceId) closeGallery();
+    else setView('china');
+  };
+
+  const choosePhoto = (index: number) => {
     playPaperSound();
-    setFlipped((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
+    if (focusedPhoto !== index) { setFlippedPhoto(null); setFocusedPhoto(index); }
+    else setFlippedPhoto((current) => current === index ? null : index);
   };
 
   const saveNote = (key: string, value: string) => {
@@ -200,121 +223,95 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
     localStorage.setItem('xiaorun-travel-notes', JSON.stringify(next));
   };
 
+  const switchPage = (nextPage: number) => {
+    playPaperSound(); setFocusedPhoto(null); setFlippedPhoto(null); setPage(nextPage);
+  };
+
+  const title = place ? place.name : province ? `${province.name}旅行地图` : '一起走过的地方';
+
   return (
     <section ref={rootRef} className="travel-modal" role="dialog" aria-modal="true" aria-label="小润的旅行地图">
       <button className="travel-backdrop" aria-label="关闭旅行地图" onClick={closeAnimated} />
       <div className="stamp-shell">
         <header className="travel-toolbar">
-          <div>
-            <p>OUR TRAVEL LOG · 旅行日志</p>
-            <h2>{selectedCity ? `${city?.name}旅行相册` : view === 'guangdong' ? '广东省旅行地图' : '一起走过的地方'}</h2>
-          </div>
+          <div><p>OUR TRAVEL LOG · 旅行日志</p><h2>{title}</h2></div>
           <div className="travel-actions">
-            {(view === 'guangdong' || selectedCity) && (
-              <button type="button" onClick={() => selectedCity ? setSelectedCity(null) : setView('china')}>
-                ← {selectedCity ? '回到广东' : '回到中国地图'}
-              </button>
-            )}
+            {view !== 'china' && <button type="button" onClick={goBack}>← {selectedPlaceId && !province?.direct ? `回到${province?.name}地图` : '回到中国地图'}</button>}
             <button className="travel-close" type="button" aria-label="关闭" onClick={closeAnimated}>×</button>
           </div>
         </header>
 
-        <div className="travel-canvas">
-          {view === 'china' ? (
-            <div className="map-sheet china-sheet">
-              <img src={asset('china-map.webp')} alt="中国旅行地图，江苏、江西、福建、贵州、广东被标记为去过的地方" />
+        <div ref={canvasRef} className={`travel-canvas ${place ? 'has-open-gallery' : ''}`}>
+          <div className={`map-sheet ${view === 'china' ? 'china-sheet' : 'province-sheet'}`}>
+            <div className="map-surface">
+              <img src={asset(view === 'china' ? 'china-map.webp' : province!.map)} alt={view === 'china' ? '中国旅行地图，江苏、江西、福建、贵州、广东被标记为去过的地方' : province!.alt} />
               <div className="map-wash" aria-hidden="true" />
-              {provincePins.map((pin) => (
-                <button
-                  key={pin.id}
-                  className={`province-pin ${pin.id === 'guangdong' ? 'is-ready' : ''}`}
-                  style={{ left: `${pin.x}%`, top: `${pin.y}%`, width: `${pin.w}%`, height: `${pin.h}%` }}
-                  onClick={() => chooseProvince(pin.id, pin.name)}
-                  aria-label={`打开${pin.name}旅行页`}
-                >
-                  <span>{pin.name}</span>
+            </div>
+            {(view === 'china' || !province?.direct) && <nav className="map-stamp-tray" aria-label={view === 'china' ? '选择省份' : '选择旅行地点'}>
+              {view === 'china' ? provinces.map((item, index) => (
+                <button key={item.id} className="map-stamp-button" onClick={(event) => chooseProvince(event, item)} aria-label={`打开${item.name}旅行页`}>
+                  <small>{String(index + 1).padStart(2, '0')}</small><strong>{item.name}</strong><span>{item.english}</span>
+                </button>
+              )) : province!.places.map((item, index) => (
+                <button key={item.id} className="map-stamp-button" onClick={(event) => openPlace(event, item.id)} aria-label={`打开${item.name}旅行照片`}>
+                  <small>{String(index + 1).padStart(2, '0')}</small><strong>{item.name}</strong><span>OPEN ALBUM</span>
                 </button>
               ))}
-            </div>
-          ) : (
-            <div className="map-sheet province-sheet">
-              <img src={asset('guangdong-map.webp')} alt="广东省地图，标出了东莞、珠海、汕头、潮州、香港和澳门" />
-              <div className="map-wash" aria-hidden="true" />
-              {cityPins.map((pin) => {
-                const item = cities.find((entry) => entry.id === pin.id)!;
-                return (
-                  <button
-                    key={pin.id}
-                    className="city-pin"
-                    style={{ left: `${pin.x}%`, top: `${pin.y}%`, width: `${pin.w}%`, height: `${pin.h}%` }}
-                    onClick={() => openCity(pin.id)}
-                    aria-label={`打开${item.name}旅行照片`}
-                  ><span>{item.name}</span></button>
-                );
-              })}
-              <button className="harbor-pin hongkong-pin" onClick={() => openCity('hongkong')} aria-label="打开香港旅行照片">
-                <img src={asset('hong-kong-icon.webp')} alt="" /><span>香港</span>
-              </button>
-              <button className="harbor-pin macau-pin" onClick={() => openCity('macau')} aria-label="打开澳门旅行照片">
-                <img src={asset('macau-icon.webp')} alt="" /><span>澳门</span>
-              </button>
-            </div>
+            </nav>}
+          </div>
+
+          {place && (
+            <>
+              <div className="map-dim" aria-hidden="true" />
+              <div className="location-preview" style={{ left: previewOrigin.x, top: previewOrigin.y }} aria-hidden="true"><img src={place.photos[page * 4]?.src ?? place.photos[0].src} alt="" /></div>
+              <section className="photo-gallery-layer" aria-label={`${place.name}拍立得相册`}>
+                <div className="gallery-mini-heading">
+                  <div><small>{province?.english} · TRAVEL NOTES</small><h3>{place.name}</h3><p>{place.subtitle}</p></div>
+                  <button type="button" onClick={closeGallery}>收起照片 ×</button>
+                </div>
+                <div className={`photo-fan ${focusedPhoto !== null ? 'has-focus' : ''}`}>
+                  {visiblePhotos.map((photo, index) => {
+                    const absoluteIndex = page * 4 + index;
+                    const key = `${province?.id}-${place.id}-${absoluteIndex}`;
+                    const flipped = flippedPhoto === index;
+                    return (
+                      <article
+                        className={`polaroid ${flipped ? 'is-flipped' : ''} ${focusedPhoto === index ? 'is-focused' : ''}`}
+                        key={key} tabIndex={0}
+                        aria-label={`${photo.label || `第 ${absoluteIndex + 1} 张照片`}，${focusedPhoto === index ? '再次点击翻面写留言' : '点击聚焦'}`}
+                        onClick={() => choosePhoto(index)}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choosePhoto(index); } }}
+                      >
+                        <div className="polaroid-card">
+                          <div className="polaroid-face polaroid-front">
+                            <img src={photo.src} alt={photo.label || `${place.name}旅行照片`} />
+                            <div className="photo-label"><span>{photo.label || '\u00a0'}</span><small>{String(absoluteIndex + 1).padStart(2, '0')}</small></div>
+                          </div>
+                          <div className="polaroid-face polaroid-back">
+                            <p>写给这一天：</p>
+                            <textarea value={notes[key] ?? ''} placeholder="在这里写一句想留给小润的话……" aria-label="照片背面的留言" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onChange={(event) => saveNote(key, event.target.value)} />
+                            <small>留言会保存在这台设备上</small>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+                <div className="gallery-controls">
+                  {pageCount > 1 && <button type="button" disabled={page === 0} onClick={() => switchPage(page - 1)}>← 上一叠</button>}
+                  <p>{focusedPhoto === null ? '点击一张拍立得，把它拿到眼前' : flippedPhoto === null ? '再点击一次，翻到背面写留言' : '正在照片背面写留言'}</p>
+                  {pageCount > 1 && <button type="button" disabled={page === pageCount - 1} onClick={() => switchPage(page + 1)}>下一叠 →</button>}
+                </div>
+              </section>
+            </>
           )}
         </div>
 
         <footer className="travel-caption">
           <span className="travel-compass" aria-hidden="true">✦</span>
-          <p>{notice}</p>
-          <small>{view === 'china' ? '5 个省份留有脚印' : '点击照片可以翻到背面写留言'}</small>
+          <p>{view === 'china' ? '从左上角挑一枚省份邮票，打开一段旅程' : selectedPlaceId ? '照片已经摊开，挑一张仔细看看' : province?.direct ? '南京的照片正在展开' : '从左上角挑一个地点，拆开一叠拍立得'}</p>
+          <small>{view === 'china' ? '5 个省份留有脚印' : `${province?.places.length ?? 0} 个旅行入口`}</small>
         </footer>
-
-        {city && (
-          <section className="city-gallery" aria-label={`${city.name}拍立得相册`}>
-            <header className="gallery-heading">
-              <div><small>GUANGDONG · {city.name.toUpperCase()}</small><h3>{city.name}</h3><p>{city.subtitle}</p></div>
-              <button type="button" onClick={() => setSelectedCity(null)}>收起照片 ×</button>
-            </header>
-            <div className="polaroid-track">
-              {city.photos.map((photo, index) => {
-                const key = `${city.id}-${index}`;
-                const isFlipped = flipped.has(key);
-                const tilt = [-2.5, 1.7, -1.1, 2.2, -1.8, 1.2][index % 6];
-                return (
-                  <article
-                    className={`polaroid ${isFlipped ? 'is-flipped' : ''}`}
-                    key={key}
-                    tabIndex={0}
-                    aria-label={`${photo.label || `第 ${index + 1} 张照片`}，点击翻面写留言`}
-                    onClick={() => togglePhoto(key)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); togglePhoto(key); }
-                    }}
-                  >
-                    <div className="polaroid-card" style={{ '--tilt': `${tilt}deg`, '--tilt-reverse': `${-tilt}deg` } as React.CSSProperties}>
-                      <div className="polaroid-face polaroid-front">
-                        <img src={photo.src} alt={photo.label || `${city.name}旅行照片`} />
-                        <div className="photo-label"><span>{photo.label || '\u00a0'}</span><small>{String(index + 1).padStart(2, '0')}</small></div>
-                      </div>
-                      <div className="polaroid-face polaroid-back">
-                        <p>写给这一天：</p>
-                        <textarea
-                          value={notes[key] ?? ''}
-                          placeholder="点击这里，写下一句想留给小润的话……"
-                          aria-label="照片背面的留言"
-                          onClick={(event) => event.stopPropagation()}
-                          onKeyDown={(event) => event.stopPropagation()}
-                          onChange={(event) => saveNote(key, event.target.value)}
-                        />
-                        <small>留言会保存在这台设备上</small>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-            <p className="gallery-tip">单击拍立得翻面 · 横向滑动查看更多</p>
-          </section>
-        )}
       </div>
     </section>
   );

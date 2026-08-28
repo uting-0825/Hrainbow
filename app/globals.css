@@ -774,3 +774,291 @@ body {
   .province-pin.is-ready::after { animation: none; }
   .polaroid-card { transition-duration: .01ms; }
 }
+
+/* Travel map v2: stamp selectors + layered polaroid fan */
+.travel-canvas {
+  position: relative;
+  min-height: 0;
+  isolation: isolate;
+}
+
+.map-sheet {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.map-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform: translateZ(0);
+  transition: filter .62s cubic-bezier(.22, 1, .36, 1), transform .62s cubic-bezier(.22, 1, .36, 1);
+}
+
+.map-surface > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.map-surface .map-wash {
+  position: absolute;
+  inset: 0;
+}
+
+.has-open-gallery .map-surface {
+  filter: blur(7px) brightness(.8) saturate(.55);
+  transform: scale(1.018);
+}
+
+.map-stamp-tray {
+  position: absolute;
+  z-index: 4;
+  left: clamp(16px, 2.2vw, 30px);
+  top: clamp(16px, 2.2vw, 30px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 9px;
+  width: min(600px, calc(100% - 40px));
+  transition: opacity .35s ease, filter .5s ease;
+}
+
+.has-open-gallery .map-stamp-tray {
+  opacity: .2;
+  filter: blur(2px) saturate(.55);
+  pointer-events: none;
+}
+
+.map-stamp-button {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  min-width: 94px;
+  min-height: 60px;
+  padding: 9px 12px 8px 14px;
+  overflow: hidden;
+  border: 0;
+  color: #674137;
+  background:
+    radial-gradient(circle at 0 0, transparent 4px, #efe0bd 4.8px) 0 0 / 12px 12px,
+    linear-gradient(145deg, #f4e8cb, #dac49a);
+  box-shadow: 0 7px 18px rgba(65, 44, 29, .22), inset 0 0 0 1px rgba(99, 66, 43, .2);
+  cursor: pointer;
+  transform: translateY(0) rotate(var(--stamp-tilt, 0deg));
+  transition: transform .34s cubic-bezier(.22, 1, .36, 1), filter .3s ease, box-shadow .3s ease;
+  clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px);
+}
+
+.map-stamp-button:nth-child(2n) { --stamp-tilt: 1deg; }
+.map-stamp-button:nth-child(3n) { --stamp-tilt: -1.2deg; }
+.map-stamp-button::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed rgba(121, 71, 55, .38);
+  pointer-events: none;
+}
+.map-stamp-button::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 20px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(126, 65, 55, .34);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(126, 65, 55, .08);
+}
+.map-stamp-button small {
+  grid-row: 1 / 3;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  padding-right: 10px;
+  margin-right: 9px;
+  border-right: 1px solid rgba(111, 74, 52, .22);
+  color: #9a6b58;
+  font: 9px/1 Georgia, serif;
+  letter-spacing: .08em;
+}
+.map-stamp-button strong {
+  position: relative;
+  z-index: 1;
+  padding-right: 18px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .13em;
+}
+.map-stamp-button span {
+  color: #8c735e;
+  font: 7px/1.1 Georgia, serif;
+  letter-spacing: .16em;
+}
+.map-stamp-button:hover,
+.map-stamp-button:focus-visible {
+  z-index: 2;
+  outline: none;
+  filter: brightness(1.08) drop-shadow(0 0 12px rgba(255, 225, 154, .72));
+  transform: translateY(-5px) rotate(0deg) scale(1.025);
+  box-shadow: 0 13px 25px rgba(65, 44, 29, .28), inset 0 0 0 1px rgba(99, 66, 43, .24);
+}
+
+.map-dim {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  visibility: hidden;
+  opacity: 0;
+  border-radius: 18px;
+  background: rgba(236, 225, 202, .58);
+  box-shadow: inset 0 0 80px rgba(75, 51, 34, .12);
+  backdrop-filter: blur(1px);
+}
+
+.location-preview {
+  position: absolute;
+  z-index: 10;
+  width: 82px;
+  height: 102px;
+  padding: 5px 5px 16px;
+  visibility: hidden;
+  opacity: 0;
+  border: 1px solid rgba(77, 57, 40, .24);
+  background: #f6edd9;
+  box-shadow: 0 12px 26px rgba(61, 42, 27, .28);
+  transform: translate(-50%, 0);
+  pointer-events: none;
+}
+.location-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+.photo-gallery-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: clamp(17px, 2.7vw, 33px) clamp(16px, 3.4vw, 44px) 16px;
+  pointer-events: none;
+}
+
+.gallery-mini-heading {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  color: #51483d;
+  pointer-events: auto;
+}
+.gallery-mini-heading small { color: #8b5e4f; font: 8px/1.2 Georgia, serif; letter-spacing: .2em; }
+.gallery-mini-heading h3 { margin: 2px 0 0; font-size: clamp(25px, 3vw, 39px); font-weight: 500; letter-spacing: .08em; }
+.gallery-mini-heading p { margin: 2px 0 0; color: #76685a; font-size: 11px; letter-spacing: .06em; }
+.gallery-mini-heading button,
+.gallery-controls button {
+  border: 1px solid rgba(91, 65, 45, .28);
+  border-radius: 999px;
+  color: #65483d;
+  background: rgba(248, 238, 216, .78);
+  box-shadow: 0 5px 14px rgba(68, 46, 30, .12);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+.gallery-mini-heading button { padding: 8px 13px; font-size: 10px; }
+
+.photo-fan {
+  position: relative;
+  z-index: 12;
+  min-height: 0;
+  pointer-events: auto;
+}
+.photo-fan .polaroid {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(175px, 18.2vw, 246px);
+  height: clamp(250px, 38vh, 344px);
+  margin-left: calc(clamp(175px, 18.2vw, 246px) / -2);
+  margin-top: calc(clamp(250px, 38vh, 344px) / -2);
+  visibility: hidden;
+  opacity: 0;
+  perspective: 1200px;
+  cursor: pointer;
+  outline: none;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+.photo-fan .polaroid-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform: rotateY(0deg);
+  transform-style: preserve-3d;
+  transition: transform .68s cubic-bezier(.22, 1, .36, 1);
+}
+.photo-fan .polaroid.is-flipped .polaroid-card { transform: rotateY(180deg); }
+.photo-fan .polaroid:hover .polaroid-face { box-shadow: 0 22px 42px rgba(57, 39, 25, .34), inset 0 0 18px rgba(110, 76, 44, .08); }
+.photo-fan .polaroid:focus-visible .polaroid-card { outline: 2px dashed rgba(112, 61, 45, .68); outline-offset: 6px; }
+
+.gallery-controls {
+  position: relative;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: minmax(82px, auto) 1fr minmax(82px, auto);
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  pointer-events: auto;
+}
+.gallery-controls p { grid-column: 2; margin: 0; color: #6d5c4b; text-align: center; font-size: 10px; letter-spacing: .1em; }
+.gallery-controls button { padding: 7px 11px; font-size: 9px; }
+.gallery-controls button:last-child { grid-column: 3; }
+.gallery-controls button:disabled { opacity: .35; cursor: default; }
+
+@media (max-width: 760px) {
+  .map-surface > img { object-fit: cover; }
+  .china-sheet .map-surface > img { object-position: 58% center; }
+  .province-sheet .map-surface > img { object-position: center; }
+  .map-stamp-tray { left: 12px; top: 12px; gap: 6px; width: calc(100% - 24px); }
+  .map-stamp-button { min-width: 75px; min-height: 50px; padding: 7px 8px 6px 10px; }
+  .map-stamp-button small { padding-right: 6px; margin-right: 6px; font-size: 7px; }
+  .map-stamp-button strong { padding-right: 10px; font-size: 12px; }
+  .map-stamp-button span { font-size: 6px; }
+  .map-stamp-button::after { right: 5px; top: 5px; width: 15px; }
+  .photo-gallery-layer { padding: 13px 10px 11px; }
+  .gallery-mini-heading h3 { font-size: 25px; }
+  .gallery-mini-heading p { max-width: 220px; font-size: 9px; }
+  .gallery-mini-heading button { padding: 6px 9px; font-size: 9px; }
+  .photo-fan .polaroid {
+    width: min(44vw, 190px);
+    height: min(45vh, 285px);
+    margin-left: calc(min(44vw, 190px) / -2);
+    margin-top: calc(min(45vh, 285px) / -2);
+  }
+  .polaroid-face { padding: 8px 8px 7px; }
+  .photo-label { min-height: 38px; padding-top: 5px; }
+  .photo-label span { font-size: 10px; }
+  .gallery-controls { grid-template-columns: 72px 1fr 72px; gap: 5px; }
+  .gallery-controls p { font-size: 8px; }
+  .gallery-controls button { padding: 6px 7px; font-size: 8px; }
+}
+
+@media (max-width: 460px) {
+  .map-stamp-tray { max-height: 122px; overflow-y: auto; padding-bottom: 6px; }
+  .gallery-mini-heading p { display: none; }
+  .photo-fan .polaroid { width: min(47vw, 176px); height: min(43vh, 260px); margin-left: calc(min(47vw, 176px) / -2); margin-top: calc(min(43vh, 260px) / -2); }
+  .gallery-controls p { letter-spacing: .03em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-surface,
+  .map-stamp-button,
+  .photo-fan .polaroid-card { transition-duration: .01ms; }
+}
