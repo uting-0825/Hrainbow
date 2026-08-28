@@ -8,7 +8,7 @@ import AmbientCanvas from './components/AmbientCanvas';
 gsap.registerPlugin(useGSAP);
 
 type Hotspot = {
-  id: 'map' | 'lamp' | 'computer' | 'record' | 'dog';
+  id: 'map' | 'computer' | 'record' | 'dog';
   label: string;
   hint: string;
   x: number;
@@ -19,7 +19,6 @@ type Hotspot = {
 
 const hotspots: Hotspot[] = [
   { id: 'map', label: '旅行地图', hint: '江西 · 福建 · 贵州 · 广东', x: 3.2, y: 3.5, w: 34, h: 34 },
-  { id: 'lamp', label: '台灯', hint: '点亮一小片夜晚', x: 28.5, y: 19, w: 12.5, h: 36 },
   { id: 'computer', label: '小润的电脑', hint: '微信 · 星露谷 · 胡闹厨房', x: 36.5, y: 27, w: 29, h: 31 },
   { id: 'record', label: '唱片机', hint: '一些会反复想起的旋律', x: 63, y: 28, w: 20.5, h: 31 },
   { id: 'dog', label: '金毛', hint: '它好像一直在等你摸摸', x: 8.5, y: 53, w: 22, h: 44 },
@@ -41,7 +40,6 @@ function cropStyle(item: Hotspot) {
 export default function Home() {
   const stageRef = useRef<HTMLElement>(null);
   const [note, setNote] = useState('把鼠标靠近房间里的物件');
-  const [lampOn, setLampOn] = useState(true);
 
   useGSAP(() => {
     const mm = gsap.matchMedia();
@@ -49,7 +47,6 @@ export default function Home() {
       if (context.conditions?.reduce) return;
       gsap.from('.room-stage', { autoAlpha: 0, scale: 0.985, y: 18, duration: 1.15, ease: 'power3.out' });
       gsap.from('.scene-title > *', { autoAlpha: 0, y: 10, stagger: 0.09, duration: 0.75, ease: 'power2.out' });
-      gsap.to('.map-spark', { autoAlpha: 0.35, scale: 1.75, stagger: 0.3, repeat: -1, yoyo: true, duration: 1.15, ease: 'sine.inOut' });
       gsap.to('.record-disc', { rotation: 360, repeat: -1, duration: 7, ease: 'none', transformOrigin: '50% 50%' });
       gsap.to('.dog-tail-wash', { rotation: 10, repeat: -1, yoyo: true, duration: 0.55, ease: 'sine.inOut', transformOrigin: '85% 50%' });
     });
@@ -70,15 +67,16 @@ export default function Home() {
 
   const activate = (item: Hotspot) => {
     setNote(`${item.label}｜${item.hint}`);
-    if (item.id === 'lamp') setLampOn((value) => !value);
   };
 
   return (
-    <main ref={stageRef} className={`memory-room ${lampOn ? 'lamp-is-on' : 'lamp-is-off'}`}>
+    <main ref={stageRef} className="memory-room">
       <AmbientCanvas />
       <header className="scene-title">
-        <p>09 / 05 · FOR XIAO RUN</p>
-        <h1>小润的回忆书房</h1>
+        <div className="scene-heading">
+          <p>09 / 05 · 小润</p>
+          <div className="scene-dialog" aria-live="polite">{note}</div>
+        </div>
         <span>一间正在慢慢住进故事的房间</span>
       </header>
 
@@ -102,15 +100,13 @@ export default function Home() {
             onClick={() => activate(item)}
           >
             <span className="object-crop" aria-hidden="true" />
-            {item.id === 'map' && <span className="map-sparks" aria-hidden="true"><i className="map-spark one" /><i className="map-spark two" /><i className="map-spark three" /><i className="map-spark four" /></span>}
             <span className="focus-ring" aria-hidden="true" />
           </button>
         ))}
       </section>
 
       <footer className="scene-footer">
-        <p aria-live="polite">{note}</p>
-        <span><i /> 5 个故事入口 · 内容稍后入住</span>
+        <span><i />点击物品试试看吧^^</span>
       </footer>
     </main>
   );
