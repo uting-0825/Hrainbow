@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import AmbientCanvas from './components/AmbientCanvas';
+import TravelMapModal from './components/TravelMapModal';
 
 gsap.registerPlugin(useGSAP);
 
@@ -40,6 +41,7 @@ function cropStyle(item: Hotspot) {
 export default function Home() {
   const stageRef = useRef<HTMLElement>(null);
   const [note, setNote] = useState('把鼠标靠近房间里的物件');
+  const [mapOpen, setMapOpen] = useState(false);
 
   useGSAP(() => {
     const mm = gsap.matchMedia();
@@ -66,6 +68,10 @@ export default function Home() {
   };
 
   const activate = (item: Hotspot) => {
+    if (item.id === 'map') {
+      setMapOpen(true);
+      return;
+    }
     setNote(`${item.label}｜${item.hint}`);
   };
 
@@ -108,6 +114,7 @@ export default function Home() {
       <footer className="scene-footer">
         <span><i />点击物品试试看吧^^</span>
       </footer>
+      {mapOpen && <TravelMapModal onClose={() => setMapOpen(false)} />}
     </main>
   );
 }
