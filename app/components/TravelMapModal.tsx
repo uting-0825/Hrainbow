@@ -264,7 +264,16 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
             <>
               <div className="map-dim" aria-hidden="true" />
               <div className="location-preview" style={{ left: previewOrigin.x, top: previewOrigin.y }} aria-hidden="true"><img src={place.photos[page * 4]?.src ?? place.photos[0].src} alt="" /></div>
-              <section className="photo-gallery-layer" aria-label={`${place.name}拍立得相册`}>
+              <section
+                className="photo-gallery-layer"
+                aria-label={`${place.name}拍立得相册`}
+                onClick={(event) => {
+                  if (focusedPhoto === null) return;
+                  if ((event.target as HTMLElement).closest('.polaroid, button, textarea')) return;
+                  setFlippedPhoto(null);
+                  setFocusedPhoto(null);
+                }}
+              >
                 <div className="gallery-mini-heading">
                   <div><small>{province?.english} · TRAVEL NOTES</small><h3>{place.name}</h3><p>{place.subtitle}</p></div>
                   <button type="button" onClick={closeGallery}>收起照片 ×</button>

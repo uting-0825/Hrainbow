@@ -945,8 +945,11 @@ body {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   padding: clamp(17px, 2.7vw, 33px) clamp(16px, 3.4vw, 44px) 16px;
-  pointer-events: none;
+  cursor: zoom-out;
+  pointer-events: auto;
 }
+
+.photo-gallery-layer:not(:has(.photo-fan.has-focus)) { cursor: default; }
 
 .gallery-mini-heading {
   position: relative;
@@ -977,7 +980,7 @@ body {
   position: relative;
   z-index: 12;
   min-height: 0;
-  pointer-events: auto;
+  pointer-events: none;
 }
 .photo-fan .polaroid {
   position: absolute;
@@ -994,6 +997,7 @@ body {
   outline: none;
   transform-origin: center center;
   will-change: transform, opacity;
+  pointer-events: auto;
 }
 .photo-fan .polaroid-card {
   position: relative;
