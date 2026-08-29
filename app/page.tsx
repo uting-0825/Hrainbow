@@ -27,6 +27,8 @@ const hotspots: Hotspot[] = [
   { id: 'dog', label: '金毛', hint: '它好像一直在等你摸摸', x: 8.5, y: 53, w: 22, h: 44 },
 ];
 
+const defaultRoomNote = '第一次来？建议先点击唱片机，听听杂音里藏着什么';
+
 function cropStyle(item: Hotspot) {
   return {
     left: `${item.x}%`,
@@ -42,7 +44,7 @@ function cropStyle(item: Hotspot) {
 
 export default function Home() {
   const stageRef = useRef<HTMLElement>(null);
-  const [note, setNote] = useState('把鼠标靠近房间里的物件');
+  const [note, setNote] = useState(defaultRoomNote);
   const [mapOpen, setMapOpen] = useState(false);
   const [dogGameOpen, setDogGameOpen] = useState(false);
   const [radioOpen, setRadioOpen] = useState(false);
@@ -112,9 +114,9 @@ export default function Home() {
             style={cropStyle(item)}
             aria-label={`${item.label}：${item.hint}`}
             onPointerEnter={(event) => { hover(event, true); setNote(`${item.label}｜${item.hint}`); }}
-            onPointerLeave={(event) => { hover(event, false); setNote('把鼠标靠近房间里的物件'); }}
+            onPointerLeave={(event) => { hover(event, false); setNote(defaultRoomNote); }}
             onFocus={(event) => hover(event as unknown as React.PointerEvent<HTMLButtonElement>, true)}
-            onBlur={(event) => hover(event as unknown as React.PointerEvent<HTMLButtonElement>, false)}
+            onBlur={(event) => { hover(event as unknown as React.PointerEvent<HTMLButtonElement>, false); setNote(defaultRoomNote); }}
             onClick={() => activate(item)}
           >
             <span className="object-crop" aria-hidden="true" />
