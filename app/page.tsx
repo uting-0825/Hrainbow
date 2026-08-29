@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import AmbientCanvas from './components/AmbientCanvas';
+import GoldenRetrieverGame from './components/GoldenRetrieverGame';
+import RadioExperience from './components/RadioExperience';
 import TravelMapModal from './components/TravelMapModal';
 
 gsap.registerPlugin(useGSAP);
@@ -42,6 +44,8 @@ export default function Home() {
   const stageRef = useRef<HTMLElement>(null);
   const [note, setNote] = useState('把鼠标靠近房间里的物件');
   const [mapOpen, setMapOpen] = useState(false);
+  const [dogGameOpen, setDogGameOpen] = useState(false);
+  const [radioOpen, setRadioOpen] = useState(false);
 
   useGSAP(() => {
     const mm = gsap.matchMedia();
@@ -70,6 +74,14 @@ export default function Home() {
   const activate = (item: Hotspot) => {
     if (item.id === 'map') {
       setMapOpen(true);
+      return;
+    }
+    if (item.id === 'dog') {
+      setDogGameOpen(true);
+      return;
+    }
+    if (item.id === 'record') {
+      setRadioOpen(true);
       return;
     }
     setNote(`${item.label}｜${item.hint}`);
@@ -115,6 +127,8 @@ export default function Home() {
         <span><i />点击物品试试看吧^^</span>
       </footer>
       {mapOpen && <TravelMapModal onClose={() => setMapOpen(false)} />}
+      {dogGameOpen && <GoldenRetrieverGame onClose={() => setDogGameOpen(false)} />}
+      <RadioExperience isOpen={radioOpen} onClose={() => setRadioOpen(false)} />
     </main>
   );
 }
