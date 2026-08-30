@@ -1,13 +1,19 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import AmbientCanvas from './components/AmbientCanvas';
-import ComputerMode from './components/computer/ComputerMode';
-import GoldenRetrieverGame from './components/GoldenRetrieverGame';
-import RadioExperience from './components/RadioExperience';
-import TravelMapModal from './components/TravelMapModal';
+
+const loadComputerMode = () => import('./components/computer/ComputerMode');
+const loadGoldenRetrieverGame = () => import('./components/GoldenRetrieverGame');
+const loadRadioExperience = () => import('./components/RadioExperience');
+const loadTravelMapModal = () => import('./components/TravelMapModal');
+
+const ComputerMode = lazy(loadComputerMode);
+const GoldenRetrieverGame = lazy(loadGoldenRetrieverGame);
+const RadioExperience = lazy(loadRadioExperience);
+const TravelMapModal = lazy(loadTravelMapModal);
 
 gsap.registerPlugin(useGSAP);
 
@@ -50,6 +56,7 @@ export default function Home() {
   const [mapOpen, setMapOpen] = useState(false);
   const [dogGameOpen, setDogGameOpen] = useState(false);
   const [radioOpen, setRadioOpen] = useState(false);
+  const [radioLoaded, setRadioLoaded] = useState(false);
   const [computerOpen, setComputerOpen] = useState(false);
 
   useGSAP(() => {
@@ -106,11 +113,25 @@ export default function Home() {
       return;
     }
     if (item.id === 'record') {
+      setRadioLoaded(true);
       setRadioOpen(true);
       return;
     }
     setComputerOpen(true);
   };
+
+  const preloadExperience = (id: Hotspot['id']) => {
+    if (id === 'map') void loadTravelMapModal();
+    else if (id === 'computer') void loadComputerMode();
+    else if (id === 'record') void loadRadioExperience();
+    else void loadGoldenRetrieverGame();
+  };
+
+  const experienceFallback = (
+    <div className="experience-loading" role="status" aria-live="polite">
+      <span>正在打开回忆…</span>
+    </div>
+  );
 
   return (
     <main ref={stageRef} className={`memory-room ${computerOpen ? 'is-computer-open' : ''}`}>
@@ -124,7 +145,7 @@ export default function Home() {
       </header>
 
       <section className="room-stage" aria-label="可互动的水彩书房主界面">
-        <img className="room-painting" src="/assets/room-main-v1.png" alt="水彩风格的复古书房，摆放着旅行地图、电脑、台灯、唱片机，一只金毛坐在书桌旁" />
+        <img className="room-painting" src="/assets/room-main-v1.jpg" width={1672} height={941} fetchPriority="high" decoding="async" alt="水彩风格的复古书房，摆放着旅行地图、电脑、台灯、唱片机，一只金毛坐在书桌旁" />
         <div className="warm-pool" aria-hidden="true" />
         <div className="screen-bloom" aria-hidden="true" />
         <div className="record-disc" aria-hidden="true" />
@@ -136,9 +157,9 @@ export default function Home() {
             className={`scene-hotspot hotspot-${item.id}`}
             style={cropStyle(item)}
             aria-label={`${item.label}：${item.hint}`}
-            onPointerEnter={(event) => { hover(event, true); setNote(item.hoverText ?? `${item.label}｜${item.hint}`); }}
+            onPointerEnter={(event) => { preloadExperience(item.id); hover(event, true); setNote(item.hoverText ?? `${item.label}｜${item.hint}`); }}
             onPointerLeave={(event) => { hover(event, false); setNote(defaultRoomNote); }}
-            onFocus={(event) => { hover(event as unknown as React.PointerEvent<HTMLButtonElement>, true); setNote(item.hoverText ?? `${item.label}｜${item.hint}`); }}
+            onFocus={(event) => { preloadExperience(item.id); hover(event as unknown as React.PointerEvent<HTMLButtonElement>, true); setNote(item.hoverText ?? `${item.label}｜${item.hint}`); }}
             onBlur={(event) => { hover(event as unknown as React.PointerEvent<HTMLButtonElement>, false); setNote(defaultRoomNote); }}
             onClick={() => activate(item)}
           >
@@ -151,10 +172,12 @@ export default function Home() {
       <footer className="scene-footer">
         <span><i />点击物品试试看吧^^</span>
       </footer>
-      {mapOpen && <TravelMapModal onClose={() => setMapOpen(false)} />}
-      {dogGameOpen && <GoldenRetrieverGame onClose={() => setDogGameOpen(false)} />}
-      <RadioExperience isOpen={radioOpen} onClose={() => setRadioOpen(false)} />
-      {computerOpen && <ComputerMode onExit={() => setComputerOpen(false)} />}
+      <Suspense fallback={experienceFallback}>
+        {mapOpen && <TravelMapModal onClose={() => setMapOpen(false)} />}
+        {dogGameOpen && <GoldenRetrieverGame onClose={() => setDogGameOpen(false)} />}
+        {radioLoaded && <RadioExperience isOpen={radioOpen} onClose={() => setRadioOpen(false)} />}
+        {computerOpen && <ComputerMode onExit={() => setComputerOpen(false)} />}
+      </Suspense>
     </main>
   );
 }

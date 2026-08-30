@@ -102,6 +102,8 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
   const [noteStatus, setNoteStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'error'>('loading');
   const saveTimers = useRef<Record<string, number>>({});
   const saveQueue = useRef<Record<string, Promise<void>>>({});
+  const pendingNotes = useRef<Record<string, string>>({});
+  const mounted = useRef(true);
 
   const province = useMemo(() => provinces.find((item) => item.id === view) ?? null, [view]);
   const place = useMemo(() => province?.places.find((item) => item.id === selectedPlaceId) ?? null, [province, selectedPlaceId]);
@@ -188,11 +190,62 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
     });
   }, { dependencies: [focusedPhoto], scope: rootRef, revertOnUpdate: true });
 
+  const persistNote = (key: string, value: string, keepalive = false) => {
+    const request = async () => {
+      const response = await fetch('/api/travel-notes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, note: value }),
+        keepalive,
+      });
+      if (!response.ok) throw new Error('Unable to save note');
+    };
+
+    if (mounted.current) setNoteStatus('saving');
+    const queued = (saveQueue.current[key] ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(request)
+      .then(() => { if (mounted.current) setNoteStatus('saved'); })
+      .catch(() => {
+        if (!(key in pendingNotes.current)) pendingNotes.current[key] = value;
+        if (mounted.current) setNoteStatus('error');
+      });
+    saveQueue.current[key] = queued;
+  };
+
+  const flushNote = (key: string, keepalive = false) => {
+    if (!(key in pendingNotes.current)) return;
+    window.clearTimeout(saveTimers.current[key]);
+    delete saveTimers.current[key];
+    const value = pendingNotes.current[key];
+    delete pendingNotes.current[key];
+    persistNote(key, value, keepalive);
+  };
+
+  const flushPendingNotes = (keepalive = false) => {
+    Object.keys(pendingNotes.current).forEach((key) => flushNote(key, keepalive));
+  };
+
+  useEffect(() => {
+    mounted.current = true;
+    const onPageHide = () => flushPendingNotes(true);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      mounted.current = false;
+      flushPendingNotes(true);
+    };
+  }, []);
+
   const { contextSafe } = useGSAP({ scope: rootRef });
   const closeAnimated = contextSafe(() => {
     gsap.to('.stamp-shell', { autoAlpha: 0, scale: 0.96, duration: 0.28, ease: 'power2.in' });
     gsap.to('.travel-backdrop', { autoAlpha: 0, duration: 0.3, delay: 0.06, onComplete: onClose });
   });
+  const requestClose = () => {
+    flushPendingNotes();
+    closeAnimated();
+  };
 
   const rememberOrigin = (button: HTMLButtonElement) => {
     const canvas = canvasRef.current?.getBoundingClientRect();
@@ -233,30 +286,12 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
     else setFlippedPhoto((current) => current === index ? null : index);
   };
 
-  const persistNote = (key: string, value: string) => {
-    const request = async () => {
-      const response = await fetch('/api/travel-notes', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, note: value }),
-      });
-      if (!response.ok) throw new Error('Unable to save note');
-    };
-
-    setNoteStatus('saving');
-    const queued = (saveQueue.current[key] ?? Promise.resolve())
-      .catch(() => undefined)
-      .then(request)
-      .then(() => setNoteStatus('saved'))
-      .catch(() => setNoteStatus('error'));
-    saveQueue.current[key] = queued;
-  };
-
   const saveNote = (key: string, value: string) => {
     setNotes((current) => ({ ...current, [key]: value }));
     setNoteStatus('saving');
+    pendingNotes.current[key] = value;
     window.clearTimeout(saveTimers.current[key]);
-    saveTimers.current[key] = window.setTimeout(() => persistNote(key, value), 550);
+    saveTimers.current[key] = window.setTimeout(() => flushNote(key), 550);
   };
 
   const noteStatusLabel = noteStatus === 'loading' ? '正在读取云端留言…'
@@ -273,13 +308,13 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
 
   return (
     <section ref={rootRef} className="travel-modal" role="dialog" aria-modal="true" aria-label="小润的旅行地图">
-      <button className="travel-backdrop" aria-label="关闭旅行地图" onClick={closeAnimated} />
+      <button className="travel-backdrop" aria-label="关闭旅行地图" onClick={requestClose} />
       <div className="stamp-shell">
         <header className="travel-toolbar">
           <div><p>OUR TRAVEL LOG · 旅行日志</p><h2>{title}</h2></div>
           <div className="travel-actions">
             {view !== 'china' && <button type="button" onClick={goBack}>← {selectedPlaceId && !province?.direct ? `回到${province?.name}地图` : '回到中国地图'}</button>}
-            <button className="travel-close" type="button" aria-label="关闭" onClick={closeAnimated}>×</button>
+            <button className="travel-close" type="button" aria-label="关闭" onClick={requestClose}>×</button>
           </div>
         </header>
 
@@ -340,7 +375,7 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
                           </div>
                           <div className="polaroid-face polaroid-back">
                             <p>写给这一天：</p>
-                            <textarea value={notes[key] ?? ''} maxLength={500} placeholder="在这里写一句想留给小润的话……" aria-label="照片背面的留言" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onChange={(event) => saveNote(key, event.target.value)} />
+                            <textarea value={notes[key] ?? ''} maxLength={500} placeholder="在这里写一句想留给小润的话……" aria-label="照片背面的留言" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onChange={(event) => saveNote(key, event.target.value)} onBlur={() => flushNote(key)} />
                             <small aria-live="polite">{noteStatusLabel}</small>
                           </div>
                         </div>

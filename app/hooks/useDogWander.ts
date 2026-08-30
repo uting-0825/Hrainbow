@@ -43,7 +43,7 @@ export function useDogWander({
     if (!enabled) return;
 
     let alive = true;
-    let decisionTimer: ReturnType<typeof setTimeout> | undefined;
+    let decisionTimer: number | undefined;
     let animationFrame = 0;
 
     const scheduleDecision = (minMs = 2000, maxMs = 5000) => {

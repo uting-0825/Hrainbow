@@ -17,6 +17,27 @@ body {
   font-family: "Noto Serif SC", "Songti SC", "STSong", Georgia, serif;
 }
 
+.experience-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  background: rgba(36, 25, 18, 0.38);
+  color: #f8efd9;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  letter-spacing: 0.12em;
+  backdrop-filter: blur(3px);
+}
+
+.experience-loading span {
+  padding: 0.72rem 1.1rem;
+  border: 1px solid rgba(248, 239, 217, 0.44);
+  border-radius: 999px;
+  background: rgba(69, 45, 29, 0.72);
+  box-shadow: 0 10px 34px rgba(30, 19, 12, 0.25);
+}
+
 .memory-room {
   position: relative;
   display: grid;
@@ -254,7 +275,7 @@ body {
 .object-crop {
   position: absolute;
   inset: 0;
-  background-image: url('/assets/room-main-v1.png');
+  background-image: url('/assets/room-main-v1.jpg');
   background-repeat: no-repeat;
   background-size: var(--crop-size-x) var(--crop-size-y);
   background-position: var(--crop-pos-x) var(--crop-pos-y);

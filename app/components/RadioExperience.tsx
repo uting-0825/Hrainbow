@@ -249,9 +249,12 @@ function SignalCanvas({ analyser, strength, locked }: { analyser: AnalyserNode |
   const analyserRef = useRef(analyser);
   const strengthRef = useRef(strength);
   const lockedRef = useRef(locked);
-  analyserRef.current = analyser;
-  strengthRef.current = strength;
-  lockedRef.current = locked;
+
+  useEffect(() => {
+    analyserRef.current = analyser;
+    strengthRef.current = strength;
+    lockedRef.current = locked;
+  }, [analyser, locked, strength]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -325,6 +328,7 @@ export default function RadioExperience({ isOpen, onClose }: RadioExperienceProp
   const [lockedChannel, setLockedChannel] = useState<number | null>(null);
   const [foundNotice, setFoundNotice] = useState<{ frequency: number; isNew: boolean } | null>(null);
   const [audioReady, setAudioReady] = useState(false);
+  const [signalAnalyser, setSignalAnalyser] = useState<AnalyserNode | null>(null);
   const dragRef = useRef<{ pointerId: number; x: number; frequency: number } | null>(null);
   const currentFrequencyRef = useRef(currentFrequency);
   const openRef = useRef(isOpen);
@@ -332,11 +336,13 @@ export default function RadioExperience({ isOpen, onClose }: RadioExperienceProp
   const activeBgmRef = useRef(activeBgm);
   const playingRef = useRef(isBgmPlaying);
 
-  currentFrequencyRef.current = currentFrequency;
-  openRef.current = isOpen;
-  lockedRef.current = lockedChannel;
-  activeBgmRef.current = activeBgm;
-  playingRef.current = isBgmPlaying;
+  useEffect(() => {
+    currentFrequencyRef.current = currentFrequency;
+    openRef.current = isOpen;
+    lockedRef.current = lockedChannel;
+    activeBgmRef.current = activeBgm;
+    playingRef.current = isBgmPlaying;
+  }, [activeBgm, currentFrequency, isBgmPlaying, isOpen, lockedChannel]);
 
   const nearest = useMemo(() => nearestRadioChannel(currentFrequency), [currentFrequency]);
   const signalStrength = radioSignalStrength(currentFrequency);
@@ -364,6 +370,7 @@ export default function RadioExperience({ isOpen, onClose }: RadioExperienceProp
   const ensureAudio = useCallback(async () => {
     await engineRef.current?.ensureReady();
     setAudioReady(Boolean(engineRef.current?.context));
+    setSignalAnalyser(engineRef.current?.signalAnalyser ?? null);
     engineRef.current?.setBgm(activeBgmRef.current, playingRef.current);
   }, []);
 
@@ -575,7 +582,7 @@ export default function RadioExperience({ isOpen, onClose }: RadioExperienceProp
               <div className="radio-console-grid">
                 <div className="radio-signal-screen">
                   <div className="radio-screen-label"><span>SIGNAL MONITOR</span><i>{audioReady ? 'AUDIO LINK' : 'TOUCH TO START'}</i></div>
-                  <SignalCanvas analyser={engineRef.current?.signalAnalyser ?? null} strength={signalStrength} locked={lockedChannel !== null} />
+                  <SignalCanvas analyser={signalAnalyser} strength={signalStrength} locked={lockedChannel !== null} />
                 </div>
 
                 <div className="radio-meter" style={{ '--signal': signalStrength } as React.CSSProperties}>
