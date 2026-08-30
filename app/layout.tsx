@@ -3,7 +3,7 @@ import './globals.css';
 import './computer.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://xiao-run-memory-room.uting0825.chatgpt.site'),
+  metadataBase: new URL('https://xiao-run-memory-room.uting0825.workers.dev'),
   title: '给小润的回忆书房',
   description: '一间收藏旅行、游戏、音乐与陪伴的水彩生日书房。',
   openGraph: {
