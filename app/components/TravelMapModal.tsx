@@ -11,6 +11,7 @@ type Place = { id: string; name: string; subtitle: string; photos: Photo[] };
 type Province = { id: ProvinceId; name: string; english: string; map: string; alt: string; places: Place[]; direct?: boolean };
 
 const asset = (path: string) => `/assets/travel/${path}`;
+const editorSessionKey = 'travel-notes-editor-password';
 const numberedPhotos = (folder: string, count: number, labels: Array<string | undefined> = []) =>
   Array.from({ length: count }, (_, index) => ({
     src: asset(`${folder}/${String(index + 1).padStart(2, '0')}.webp`),
@@ -100,10 +101,13 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
   const [previewOrigin, setPreviewOrigin] = useState({ x: 88, y: 88 });
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [noteStatus, setNoteStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'error'>('loading');
+  const [editingUnlocked, setEditingUnlocked] = useState(false);
+  const [unlockStatus, setUnlockStatus] = useState<'idle' | 'checking' | 'error'>('idle');
   const saveTimers = useRef<Record<string, number>>({});
   const saveQueue = useRef<Record<string, Promise<void>>>({});
   const pendingNotes = useRef<Record<string, string>>({});
   const mounted = useRef(true);
+  const editorPassword = useRef('');
 
   const province = useMemo(() => provinces.find((item) => item.id === view) ?? null, [view]);
   const place = useMemo(() => province?.places.find((item) => item.id === selectedPlaceId) ?? null, [province, selectedPlaceId]);
@@ -126,6 +130,24 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
         if (active) setNoteStatus('error');
       });
     return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    const savedPassword = window.sessionStorage.getItem(editorSessionKey);
+    if (!savedPassword) return;
+
+    editorPassword.current = savedPassword;
+    fetch('/api/travel-notes', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${savedPassword}` },
+    }).then((response) => {
+      if (!mounted.current) return;
+      if (response.ok) setEditingUnlocked(true);
+      else {
+        editorPassword.current = '';
+        window.sessionStorage.removeItem(editorSessionKey);
+      }
+    }).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -192,12 +214,21 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
 
   const persistNote = (key: string, value: string, keepalive = false) => {
     const request = async () => {
+      const password = editorPassword.current;
       const response = await fetch('/api/travel-notes', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(password ? { Authorization: `Bearer ${password}` } : {}),
+        },
         body: JSON.stringify({ key, note: value }),
         keepalive,
       });
+      if (response.status === 403) {
+        editorPassword.current = '';
+        window.sessionStorage.removeItem(editorSessionKey);
+        if (mounted.current) setEditingUnlocked(false);
+      }
       if (!response.ok) throw new Error('Unable to save note');
     };
 
@@ -294,6 +325,42 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
     saveTimers.current[key] = window.setTimeout(() => flushNote(key), 550);
   };
 
+  const verifyEditor = async (password = '') => {
+    const response = await fetch('/api/travel-notes', {
+      method: 'POST',
+      headers: password ? { Authorization: `Bearer ${password}` } : {},
+    });
+    return response.ok;
+  };
+
+  const unlockEditing = async () => {
+    setUnlockStatus('checking');
+    try {
+      if (await verifyEditor()) {
+        setEditingUnlocked(true);
+        setUnlockStatus('idle');
+        return;
+      }
+
+      const password = window.prompt('请输入旅行留言编辑密码');
+      if (!password) {
+        setUnlockStatus('idle');
+        return;
+      }
+      if (!(await verifyEditor(password))) {
+        setUnlockStatus('error');
+        return;
+      }
+
+      editorPassword.current = password;
+      window.sessionStorage.setItem(editorSessionKey, password);
+      setEditingUnlocked(true);
+      setUnlockStatus('idle');
+    } catch {
+      setUnlockStatus('error');
+    }
+  };
+
   const noteStatusLabel = noteStatus === 'loading' ? '正在读取云端留言…'
     : noteStatus === 'saving' ? '正在保存到云端…'
       : noteStatus === 'saved' ? '已保存到云端'
@@ -313,6 +380,9 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
         <header className="travel-toolbar">
           <div><p>OUR TRAVEL LOG · 旅行日志</p><h2>{title}</h2></div>
           <div className="travel-actions">
+            <button type="button" disabled={editingUnlocked || unlockStatus === 'checking'} onClick={() => void unlockEditing()}>
+              {editingUnlocked ? '留言编辑已解锁' : unlockStatus === 'checking' ? '正在验证…' : unlockStatus === 'error' ? '密码错误，重试' : '解锁留言编辑'}
+            </button>
             {view !== 'china' && <button type="button" onClick={goBack}>← {selectedPlaceId && !province?.direct ? `回到${province?.name}地图` : '回到中国地图'}</button>}
             <button className="travel-close" type="button" aria-label="关闭" onClick={requestClose}>×</button>
           </div>
@@ -375,8 +445,8 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
                           </div>
                           <div className="polaroid-face polaroid-back">
                             <p>写给这一天：</p>
-                            <textarea value={notes[key] ?? ''} maxLength={500} placeholder="在这里写一句想留给小润的话……" aria-label="照片背面的留言" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onChange={(event) => saveNote(key, event.target.value)} onBlur={() => flushNote(key)} />
-                            <small aria-live="polite">{noteStatusLabel}</small>
+                            <textarea readOnly={!editingUnlocked} value={notes[key] ?? ''} maxLength={500} placeholder={editingUnlocked ? '在这里写一句想留给小润的话……' : '这张照片还没有留言'} aria-label="照片背面的留言" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onChange={(event) => saveNote(key, event.target.value)} onBlur={() => flushNote(key)} />
+                            <small aria-live="polite">{editingUnlocked ? noteStatusLabel : '留言仅站点主人可以修改'}</small>
                           </div>
                         </div>
                       </article>

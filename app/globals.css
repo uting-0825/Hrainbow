@@ -836,6 +836,7 @@ body {
 }
 
 .travel-actions button { min-height: 35px; padding: 7px 14px; font-size: 12px; }
+.travel-actions button:disabled { cursor: default; opacity: .72; }
 .travel-actions .travel-close {
   width: 38px;
   min-width: 38px;
@@ -1133,6 +1134,7 @@ body {
   font: 15px/1.85 "KaiTi", "STKaiti", cursive;
 }
 .polaroid-back textarea::placeholder { color: rgba(86, 73, 58, .46); }
+.polaroid-back textarea[readonly] { cursor: default; }
 .polaroid-back small { color: #907967; font-size: 9px; letter-spacing: .06em; }
 .gallery-tip { position: relative; z-index: 2; margin: 0; text-align: center; color: #75624e; font-size: 10px; letter-spacing: .12em; }
 

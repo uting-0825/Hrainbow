@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 
 type RuntimeEnv = {
   TRAVEL_NOTES_OWNER_EMAIL?: string;
+  TRAVEL_NOTES_ADMIN_PASSWORD?: string;
 };
 
 const responseHeaders = {
@@ -19,9 +20,15 @@ function isLocalPreview(request: Request) {
 function canEdit(request: Request) {
   if (isLocalPreview(request)) return true;
 
-  const ownerEmail = (env as unknown as RuntimeEnv).TRAVEL_NOTES_OWNER_EMAIL?.trim().toLowerCase();
+  const runtimeEnv = env as unknown as RuntimeEnv;
+  const ownerEmail = runtimeEnv.TRAVEL_NOTES_OWNER_EMAIL?.trim().toLowerCase();
   const visitorEmail = request.headers.get('oai-authenticated-user-email')?.trim().toLowerCase();
-  return Boolean(ownerEmail && visitorEmail && ownerEmail === visitorEmail);
+  if (ownerEmail && visitorEmail && ownerEmail === visitorEmail) return true;
+
+  const configuredPassword = runtimeEnv.TRAVEL_NOTES_ADMIN_PASSWORD;
+  const authorization = request.headers.get('authorization');
+  const suppliedPassword = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  return Boolean(configuredPassword && suppliedPassword && configuredPassword === suppliedPassword);
 }
 
 export async function GET() {
@@ -31,6 +38,14 @@ export async function GET() {
     console.error('Unable to load travel notes', error);
     return Response.json({ error: '留言暂时无法读取' }, { status: 500, headers: responseHeaders });
   }
+}
+
+export async function POST(request: Request) {
+  if (!canEdit(request)) {
+    return Response.json({ error: '编辑密码不正确' }, { status: 403, headers: responseHeaders });
+  }
+
+  return Response.json({ ok: true }, { headers: responseHeaders });
 }
 
 export async function PUT(request: Request) {
