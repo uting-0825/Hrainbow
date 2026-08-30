@@ -4,7 +4,7 @@ import { getTravelNotes, saveTravelNote } from '@/db/travelNotes';
 export const dynamic = 'force-dynamic';
 
 type RuntimeEnv = {
-  TRAVEL_NOTES_OWNER_ID?: string;
+  TRAVEL_NOTES_OWNER_EMAIL?: string;
 };
 
 const responseHeaders = {
@@ -19,9 +19,9 @@ function isLocalPreview(request: Request) {
 function canEdit(request: Request) {
   if (isLocalPreview(request)) return true;
 
-  const ownerId = (env as unknown as RuntimeEnv).TRAVEL_NOTES_OWNER_ID;
-  const visitorId = request.headers.get('oai-authenticated-user-id');
-  return Boolean(ownerId && visitorId && ownerId === visitorId);
+  const ownerEmail = (env as unknown as RuntimeEnv).TRAVEL_NOTES_OWNER_EMAIL?.trim().toLowerCase();
+  const visitorEmail = request.headers.get('oai-authenticated-user-email')?.trim().toLowerCase();
+  return Boolean(ownerEmail && visitorEmail && ownerEmail === visitorEmail);
 }
 
 export async function GET() {
