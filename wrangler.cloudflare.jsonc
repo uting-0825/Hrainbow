@@ -5,6 +5,16 @@
   "compatibility_date": "2026-05-15",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "825905.xyz",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.825905.xyz",
+      "custom_domain": true
+    }
+  ],
   "no_bundle": true,
   "assets": {
     "directory": "./dist/client"
