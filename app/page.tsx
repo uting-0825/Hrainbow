@@ -15,6 +15,7 @@ type Hotspot = {
   id: 'map' | 'computer' | 'record' | 'dog';
   label: string;
   hint: string;
+  hoverText?: string;
   x: number;
   y: number;
   w: number;
@@ -22,8 +23,8 @@ type Hotspot = {
 };
 
 const hotspots: Hotspot[] = [
-  { id: 'map', label: '旅行地图', hint: '江西 · 福建 · 贵州 · 广东', x: 3.2, y: 3.5, w: 34, h: 34 },
-  { id: 'computer', label: '小润的电脑', hint: 'Steam · 微信 · 回收站', x: 36.5, y: 27, w: 29, h: 31 },
+  { id: 'map', label: '旅行地图', hint: '江西 · 福建 · 贵州 · 广东', hoverText: '旅行地图 快看看我们留下的足迹吧', x: 3.2, y: 3.5, w: 34, h: 34 },
+  { id: 'computer', label: '小润的电脑', hint: 'Steam · 微信 · 回收站', hoverText: '小润的电脑 好无聊呀，玩玩智能电脑吧', x: 36.5, y: 27, w: 29, h: 31 },
   { id: 'record', label: '唱片机', hint: '一些会反复想起的旋律', x: 63, y: 28, w: 20.5, h: 31 },
   { id: 'dog', label: '金毛', hint: '它好像一直在等你摸摸', x: 8.5, y: 53, w: 22, h: 44 },
 ];
@@ -135,9 +136,9 @@ export default function Home() {
             className={`scene-hotspot hotspot-${item.id}`}
             style={cropStyle(item)}
             aria-label={`${item.label}：${item.hint}`}
-            onPointerEnter={(event) => { hover(event, true); setNote(`${item.label}｜${item.hint}`); }}
+            onPointerEnter={(event) => { hover(event, true); setNote(item.hoverText ?? `${item.label}｜${item.hint}`); }}
             onPointerLeave={(event) => { hover(event, false); setNote(defaultRoomNote); }}
-            onFocus={(event) => hover(event as unknown as React.PointerEvent<HTMLButtonElement>, true)}
+            onFocus={(event) => { hover(event as unknown as React.PointerEvent<HTMLButtonElement>, true); setNote(item.hoverText ?? `${item.label}｜${item.hint}`); }}
             onBlur={(event) => { hover(event as unknown as React.PointerEvent<HTMLButtonElement>, false); setNote(defaultRoomNote); }}
             onClick={() => activate(item)}
           >
