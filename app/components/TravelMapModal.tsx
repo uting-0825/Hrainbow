@@ -99,6 +99,9 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
   const [flippedPhoto, setFlippedPhoto] = useState<number | null>(null);
   const [previewOrigin, setPreviewOrigin] = useState({ x: 88, y: 88 });
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [noteStatus, setNoteStatus] = useState<'loading' | 'ready' | 'saving' | 'saved' | 'error'>('loading');
+  const saveTimers = useRef<Record<string, number>>({});
+  const saveQueue = useRef<Record<string, Promise<void>>>({});
 
   const province = useMemo(() => provinces.find((item) => item.id === view) ?? null, [view]);
   const place = useMemo(() => province?.places.find((item) => item.id === selectedPlaceId) ?? null, [province, selectedPlaceId]);
@@ -106,8 +109,21 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
   const pageCount = place ? Math.ceil(place.photos.length / 4) : 0;
 
   useEffect(() => {
-    try { setNotes(JSON.parse(localStorage.getItem('xiaorun-travel-notes') ?? '{}')); }
-    catch { setNotes({}); }
+    let active = true;
+    fetch('/api/travel-notes', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Unable to load notes');
+        return response.json() as Promise<{ notes: Record<string, string> }>;
+      })
+      .then(({ notes: cloudNotes }) => {
+        if (!active) return;
+        setNotes(cloudNotes);
+        setNoteStatus('ready');
+      })
+      .catch(() => {
+        if (active) setNoteStatus('error');
+      });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -217,11 +233,37 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
     else setFlippedPhoto((current) => current === index ? null : index);
   };
 
-  const saveNote = (key: string, value: string) => {
-    const next = { ...notes, [key]: value };
-    setNotes(next);
-    localStorage.setItem('xiaorun-travel-notes', JSON.stringify(next));
+  const persistNote = (key: string, value: string) => {
+    const request = async () => {
+      const response = await fetch('/api/travel-notes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, note: value }),
+      });
+      if (!response.ok) throw new Error('Unable to save note');
+    };
+
+    setNoteStatus('saving');
+    const queued = (saveQueue.current[key] ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(request)
+      .then(() => setNoteStatus('saved'))
+      .catch(() => setNoteStatus('error'));
+    saveQueue.current[key] = queued;
   };
+
+  const saveNote = (key: string, value: string) => {
+    setNotes((current) => ({ ...current, [key]: value }));
+    setNoteStatus('saving');
+    window.clearTimeout(saveTimers.current[key]);
+    saveTimers.current[key] = window.setTimeout(() => persistNote(key, value), 550);
+  };
+
+  const noteStatusLabel = noteStatus === 'loading' ? '正在读取云端留言…'
+    : noteStatus === 'saving' ? '正在保存到云端…'
+      : noteStatus === 'saved' ? '已保存到云端'
+        : noteStatus === 'error' ? '云端连接失败，请稍后重试'
+          : '留言会安全保存到云端';
 
   const switchPage = (nextPage: number) => {
     playPaperSound(); setFocusedPhoto(null); setFlippedPhoto(null); setPage(nextPage);
@@ -298,8 +340,8 @@ export default function TravelMapModal({ onClose }: TravelMapModalProps) {
                           </div>
                           <div className="polaroid-face polaroid-back">
                             <p>写给这一天：</p>
-                            <textarea value={notes[key] ?? ''} placeholder="在这里写一句想留给小润的话……" aria-label="照片背面的留言" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onChange={(event) => saveNote(key, event.target.value)} />
-                            <small>留言会保存在这台设备上</small>
+                            <textarea value={notes[key] ?? ''} maxLength={500} placeholder="在这里写一句想留给小润的话……" aria-label="照片背面的留言" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onChange={(event) => saveNote(key, event.target.value)} />
+                            <small aria-live="polite">{noteStatusLabel}</small>
                           </div>
                         </div>
                       </article>

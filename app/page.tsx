@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import AmbientCanvas from './components/AmbientCanvas';
+import ComputerMode from './components/computer/ComputerMode';
 import GoldenRetrieverGame from './components/GoldenRetrieverGame';
 import RadioExperience from './components/RadioExperience';
 import TravelMapModal from './components/TravelMapModal';
@@ -22,7 +23,7 @@ type Hotspot = {
 
 const hotspots: Hotspot[] = [
   { id: 'map', label: '旅行地图', hint: '江西 · 福建 · 贵州 · 广东', x: 3.2, y: 3.5, w: 34, h: 34 },
-  { id: 'computer', label: '小润的电脑', hint: '微信 · 星露谷 · 胡闹厨房', x: 36.5, y: 27, w: 29, h: 31 },
+  { id: 'computer', label: '小润的电脑', hint: 'Steam · 微信 · 回收站', x: 36.5, y: 27, w: 29, h: 31 },
   { id: 'record', label: '唱片机', hint: '一些会反复想起的旋律', x: 63, y: 28, w: 20.5, h: 31 },
   { id: 'dog', label: '金毛', hint: '它好像一直在等你摸摸', x: 8.5, y: 53, w: 22, h: 44 },
 ];
@@ -48,6 +49,7 @@ export default function Home() {
   const [mapOpen, setMapOpen] = useState(false);
   const [dogGameOpen, setDogGameOpen] = useState(false);
   const [radioOpen, setRadioOpen] = useState(false);
+  const [computerOpen, setComputerOpen] = useState(false);
 
   useGSAP(() => {
     const mm = gsap.matchMedia();
@@ -60,6 +62,26 @@ export default function Home() {
     });
     return () => mm.revert();
   }, { scope: stageRef });
+
+  useGSAP(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timeline = gsap.timeline({ defaults: { overwrite: 'auto' } });
+    if (computerOpen) {
+      timeline
+        .to('.scene-title, .scene-footer', { autoAlpha: 0, duration: reduce ? 0 : 0.42, ease: 'power2.in' }, 0)
+        .to('.room-stage', {
+          scale: reduce ? 1 : 1.34,
+          filter: 'brightness(.36) blur(3px)',
+          duration: reduce ? 0 : 1.35,
+          ease: 'power3.inOut',
+          transformOrigin: '51% 42%',
+        }, 0);
+    } else {
+      timeline
+        .to('.room-stage', { scale: 1, filter: 'brightness(1) blur(0px)', duration: reduce ? 0 : 0.92, ease: 'power3.out' }, 0)
+        .to('.scene-title, .scene-footer', { autoAlpha: 1, duration: reduce ? 0 : 0.5, ease: 'power2.out' }, 0.32);
+    }
+  }, { dependencies: [computerOpen], scope: stageRef });
 
   const hover = (event: React.PointerEvent<HTMLButtonElement>, entering: boolean) => {
     const target = event.currentTarget;
@@ -86,11 +108,11 @@ export default function Home() {
       setRadioOpen(true);
       return;
     }
-    setNote(`${item.label}｜${item.hint}`);
+    setComputerOpen(true);
   };
 
   return (
-    <main ref={stageRef} className="memory-room">
+    <main ref={stageRef} className={`memory-room ${computerOpen ? 'is-computer-open' : ''}`}>
       <AmbientCanvas />
       <header className="scene-title">
         <div className="scene-heading">
@@ -131,6 +153,7 @@ export default function Home() {
       {mapOpen && <TravelMapModal onClose={() => setMapOpen(false)} />}
       {dogGameOpen && <GoldenRetrieverGame onClose={() => setDogGameOpen(false)} />}
       <RadioExperience isOpen={radioOpen} onClose={() => setRadioOpen(false)} />
+      {computerOpen && <ComputerMode onExit={() => setComputerOpen(false)} />}
     </main>
   );
 }

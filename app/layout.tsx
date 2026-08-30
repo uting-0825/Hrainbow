@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import './computer.css';
 
 export const metadata: Metadata = {
   title: '给小润的回忆书房',

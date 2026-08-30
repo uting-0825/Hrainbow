@@ -1,0 +1,7 @@
+export const travelNotesSchemaSql = `
+  CREATE TABLE IF NOT EXISTS travel_notes (
+    photo_key TEXT PRIMARY KEY,
+    note TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )
+`;

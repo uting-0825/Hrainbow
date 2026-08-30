@@ -1,0 +1,13 @@
+Computer module sound effects
+
+Source: Kenney Interface Sounds
+https://kenney.nl/assets/interface-sounds
+
+License: Creative Commons CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Original files used:
+click_003.ogg, open_001.ogg, close_001.ogg, confirmation_004.ogg,
+error_005.ogg, select_006.ogg, drop_004.ogg, glitch_003.ogg
+
+The files were renamed for their roles in this project. Their audio content was not modified.
